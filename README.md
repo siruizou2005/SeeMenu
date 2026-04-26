@@ -2,73 +2,91 @@
 
 Hackathon · 2026
 
-SeeMenu 是一款面向出境旅行者的 AI 菜单翻译点餐应用。用户拍下异国语言菜单后，系统自动识别菜品、翻译说明、提示过敏原和忌口风险，并支持多人协同点餐，最终生成服务员可直接阅读的当地语言订单图片。
-
-## 一句话介绍
-
-出国吃饭看不懂菜单、不会表达忌口、多人点餐来回传菜单。SeeMenu 用「拍照识菜 + 协同点餐 + 当地语言订单」把跨语言点餐流程压缩成一次拍照和一次出示。
+SeeMenu 是一款面向出境旅行者的 AI 菜单翻译点餐应用。用户拍下异国语言菜单后，系统自动识别菜品、翻译说明、提示过敏原和忌口风险，并支持多人协同点餐，最终生成服务员可直接阅读的当地语言订单。
 
 ## 核心场景
 
-1. 旅行者进入餐厅，拍摄纸质菜单或上传菜单图片。
-2. AI 识别菜单中的菜品名称、价格、类别、可能食材和过敏原。
-3. React Native 应用生成类似国内扫码点餐的菜单页，用户可以查看中文解释、原图热区和风险提示。
-4. 同行朋友通过房间码加入，各自选菜并填写忌口或备注。
-5. 系统汇总订单，并翻译成餐厅所在地语言，用户直接出示给服务员。
+1. 旅行者进入餐厅，拍摄纸质菜单。
+2. AI（Gemini）识别菜品名称、价格、类别、食材与过敏原，并翻译为中文。
+3. 应用生成类似扫码点餐的菜单页，可查看原文热区、中文解释与风险提示。
+4. 同行朋友通过房间码加入，各自选菜并填写忌口备注。
+5. 系统汇总订单并翻译为餐厅所在地语言，直接出示给服务员。
 
-## MVP 功能范围
+## 项目结构
 
-| 模块 | 黑客松必做 | 可后续增强 |
-| --- | --- | --- |
-| 菜单识别 | 拍照上传、Gemini 结构化识别、中文翻译、置信度提示 | 自部署 OCR 前置、多图片拼接 |
-| 原图热区 | 菜品 bbox 坐标、菜单原图透明热区、点击跳转详情 | 热区人工校正、菜单版面还原 |
-| 菜品详情 | 中文名、原文名、价格、简介、食材、过敏原、忌口标签 | 真实图片检索、营养信息 |
-| 多人点餐 | 创建房间、分享加入、独立购物车、实时汇总 | 成员权限、拆单、预算提醒 |
-| 点餐单生成 | 按目标语言生成可出示订单文本，并导出订单图片 | PDF 导出、语音播报、服务员确认回译 |
-| 演示页面 | 可点击功能卡片和用户旅程 | 完整高保真 React Native UI |
-
-## 推荐技术方案
-
-黑客松阶段建议选择「React Native 前端 + Node.js 单后端 + Gemini AI 服务编排」：
-
-| 层 | 推荐 | 理由 |
-| --- | --- | --- |
-| 前端 | React Native / Expo | 第一版覆盖 iOS、Android 和路演安装包，复用 `seemenu-uidesign` 设计稿 |
-| 后端 | Node.js + TypeScript | 单后端承接上传、Gemini 调用、房间协同、订单生成和图片导出 |
-| 数据 | SQLite + 运行时内存缓存 | 本地持久化，后续更容易替换为正式数据库 |
-| 文件 | 本地文件系统 | 第一版不使用对象存储，菜单图和订单图只保存在本地 |
-| 同步 | 轮询 | 第一版先稳定跑通协同点餐，后续再升级 WebSocket |
-| AI 解析 | Gemini API + Structured Outputs | 一次请求处理菜单图片，返回结构化菜品、翻译和 bbox 热区 |
-
-详细实现方案见 [docs/DEVELOPMENT_PLAN.md](/home/fq/project/SeeMenu/docs/DEVELOPMENT_PLAN.md)。
-
-React Native、Node.js、Gemini 和订单图片导出的落地规格见 [docs/RN_NODE_GEMINI_SPEC.md](/home/fq/project/SeeMenu/docs/RN_NODE_GEMINI_SPEC.md)。
-
-## 本地开发
-
-第一版前后端在同一仓库，后端只调用 Gemini API，图片和订单图保存在 `apps/server/data/` 本地目录。
-
-```bash
-npm install
-cp .env.example .env
-npm run dev:server
-npm run dev:mobile
+```
+SeeMenu/
+├── backend/          # Node.js + Express 后端
+│   ├── server.js
+│   └── routes/
+│       ├── scan.js   # 菜单拍照 & Gemini 识别
+│       ├── menu.js   # 菜单数据查询
+│       └── rooms.js  # 多人房间协同
+├── frontend/         # React + Vite Web 前端
+│   └── src/
+│       └── pages/    # 16 个页面（首页、菜单、购物车、房间、订单等）
+├── mobile/           # React Native / Expo 移动端
+│   └── app/          # Expo Router 路由
+│       ├── (tabs)/   # 底部标签（首页、历史、个人）
+│       ├── capture.tsx
+│       ├── menu/     # 菜单列表 & 菜品详情
+│       ├── cart.tsx
+│       ├── room.tsx / join-room.tsx / room-qr.tsx
+│       ├── order.tsx / order-show.tsx
+│       └── ...
+├── start.sh          # 一键启动前后端
+└── .env.example
 ```
 
-如果暂时不配置 `GEMINI_API_KEY`，后端会返回本地样例菜单，便于先跑通 UI 和演示链路。真机调试时需要把 `EXPO_PUBLIC_API_URL` 改成电脑局域网 IP，例如 `http://192.168.x.x:3001`。
+## 技术栈
 
-## 可点击演示原型
+| 层 | 技术 |
+|---|---|
+| 移动端 | React Native / Expo（iOS & Android） |
+| Web 前端 | React + Vite |
+| 后端 | Node.js + Express |
+| AI 识别 | Google Gemini API（图片理解 + 结构化输出） |
+| 多人协同 | 房间码 + 轮询 |
 
-仓库内提供了一个无依赖静态页面，用于路演时展示「点击功能卡片查看详情」的效果：
+## 本地运行
 
-[prototype/index.html](/home/fq/project/SeeMenu/prototype/index.html)
+### 环境准备
 
-它不是最终 React Native 代码，而是用于验证项目介绍、核心功能顺序和评委演示叙事的轻量原型。
+```bash
+cp .env.example .env
+# 填入你的 GEMINI_API_KEY
+```
 
-## 项目判断
+### 启动 Web 版（前端 + 后端）
 
-这个方向适合黑客松，因为它有清晰的痛点、明确的 AI 必要性和可现场演示的闭环。需要重点控制三件事：
+```bash
+bash start.sh
+```
 
-1. 不要把 OCR、翻译、自部署模型、多端适配全部做满，优先保证「拍照到订单」闭环稳定。
-2. AI 菜品图暂不进入 MVP。菜品详情优先使用菜单原图裁剪、图形占位或无图卡片，避免误导用户把示意图当实物。
-3. 过敏原和忌口只能作为风险提示，必须保留用户确认和服务员确认环节。
+- 前端：http://localhost:5173
+- 后端：http://localhost:3001
+
+### 启动移动端
+
+```bash
+cd mobile
+npm install
+npx expo start
+```
+
+真机调试时将 `.env` 中的 `EXPO_PUBLIC_API_URL` 改为电脑局域网 IP，例如 `http://192.168.x.x:3001`。
+
+## 环境变量
+
+| 变量 | 说明 |
+|---|---|
+| `GEMINI_API_KEY` | Google Gemini API 密钥 |
+| `GEMINI_MODEL` | 使用的模型，默认 `gemini-2.5-flash` |
+| `PORT` | 后端端口，默认 `3001` |
+| `PUBLIC_BASE_URL` | 后端对外地址（用于生成图片 URL） |
+| `EXPO_PUBLIC_API_URL` | 移动端访问后端的地址 |
+
+## 注意事项
+
+- 过敏原和忌口信息仅作风险提示，须保留用户与服务员的二次确认。
+- 未配置 `GEMINI_API_KEY` 时，后端返回本地样例数据，可用于 UI 调试。
