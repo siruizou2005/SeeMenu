@@ -17,6 +17,8 @@ export default function CaptureScreen() {
   const insets = useSafeAreaInsets();
 
   const handleAlbum = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') return;
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.9 });
     if (!result.canceled) {
       setCapturedPhoto(result.assets[0].uri);
@@ -25,9 +27,18 @@ export default function CaptureScreen() {
   };
 
   const handleShutter = async () => {
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.9 });
-    if (!result.canceled) {
-      setCapturedPhoto(result.assets[0].uri);
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        router.push('/photo-review');
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({ quality: 0.9 });
+      if (!result.canceled) {
+        setCapturedPhoto(result.assets[0].uri);
+      }
+    } catch {
+      // Simulator has no camera — fall through to preview with mock data
     }
     router.push('/photo-review');
   };

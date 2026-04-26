@@ -21,7 +21,7 @@ export default function CartScreen() {
         <View style={styles.empty}>
           <Text style={styles.emptyEmoji}>🛒</Text>
           <Text style={styles.emptyText}>还没有选菜</Text>
-          <Pressable onPress={() => router.push('/menu/index')} style={styles.emptyBtn}>
+          <Pressable onPress={() => router.push('/menu')} style={styles.emptyBtn}>
             <Text style={styles.emptyBtnText}>去看菜单</Text>
           </Pressable>
         </View>

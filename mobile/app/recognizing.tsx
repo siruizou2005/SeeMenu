@@ -37,7 +37,7 @@ export default function RecognizingScreen() {
     const tid = setInterval(() => {
       if (idx >= ALL_ITEMS.length) {
         clearInterval(tid);
-        setTimeout(() => router.replace('/menu/index'), 600);
+        setTimeout(() => router.replace('/menu'), 600);
         return;
       }
       setItems(prev => {

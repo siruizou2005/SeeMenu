@@ -14,7 +14,7 @@ export default function JoinRoomScreen() {
 
   useEffect(() => {
     if (code.length === 4) {
-      const t = setTimeout(() => router.push('/menu/index'), 300);
+      const t = setTimeout(() => router.push('/room'), 300);
       return () => clearTimeout(t);
     }
   }, [code]);

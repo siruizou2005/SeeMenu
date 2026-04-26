@@ -52,7 +52,7 @@ export default function MenuScreen() {
       </View>
 
       {/* categories */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catStrip}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScrollView} contentContainerStyle={styles.catStrip}>
         {CATS.map(c => (
           <Pressable key={c} onPress={() => setActiveCat(c)} style={[styles.catPill, activeCat === c && styles.catPillActive]}>
             <Text style={[styles.catText, activeCat === c && styles.catTextActive]}>{c}</Text>
@@ -127,7 +127,8 @@ const styles = StyleSheet.create({
   restaurantName: { fontSize: 22, fontWeight: '700', color: C.ink, marginTop: 4, letterSpacing: -0.3 },
   searchBar: { marginHorizontal: 16, height: 34, backgroundColor: C.bg2, borderRadius: 10, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 8 },
   searchInput: { flex: 1, fontSize: 13, color: C.ink },
-  catStrip: { paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
+  catScrollView: { flexGrow: 0 },
+  catStrip: { paddingHorizontal: 16, paddingVertical: 10, gap: 8, alignItems: 'center' },
   catPill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999, backgroundColor: C.bg2 },
   catPillActive: { backgroundColor: C.ink },
   catText: { fontSize: 12, fontWeight: '600', color: C.ink2 },

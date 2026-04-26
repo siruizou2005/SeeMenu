@@ -18,7 +18,7 @@ export default function HistoryScreen() {
             <Text style={styles.dayLabel}>{group.day}</Text>
             <View style={styles.group}>
               {group.list.map((it, i) => (
-                <Pressable key={i} onPress={() => router.push('/menu/index')} style={({ pressed }) => [styles.row, i > 0 && styles.rowBorder, pressed && { opacity: 0.7 }]}>
+                <Pressable key={i} onPress={() => router.push('/menu')} style={({ pressed }) => [styles.row, i > 0 && styles.rowBorder, pressed && { opacity: 0.7 }]}>
                   <View style={[styles.emoji, { backgroundColor: it.bg }]}>
                     <Text style={styles.emojiText}>{it.emoji}</Text>
                   </View>
