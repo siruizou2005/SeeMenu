@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "SeeMenu",
+    "slug": "seemenu",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "mobile",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      ["expo-image-picker", {
+        "cameraPermission": "SeeMenu 需要访问相机来拍菜单",
+        "photosPermission": "SeeMenu 需要访问相册来选菜单图片"
+      }]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
