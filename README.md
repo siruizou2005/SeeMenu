@@ -1,92 +1,166 @@
-# SeeMenu 智拍菜单
+# SeeMenu
 
-Hackathon · 2026
+**Hackathon · 2026**
 
-SeeMenu 是一款面向出境旅行者的 AI 菜单翻译点餐应用。用户拍下异国语言菜单后，系统自动识别菜品、翻译说明、提示过敏原和忌口风险，并支持多人协同点餐，最终生成服务员可直接阅读的当地语言订单。
+SeeMenu is an AI-powered menu translation and collaborative ordering app for international travelers. Snap a photo of any foreign-language menu and the app instantly recognizes dishes, translates descriptions, flags allergens and dietary risks, and lets your whole group order together — generating a final receipt in the restaurant's local language, ready to show the server.
 
-## 核心场景
+---
 
-1. 旅行者进入餐厅，拍摄纸质菜单。
-2. AI（Gemini）识别菜品名称、价格、类别、食材与过敏原，并翻译为中文。
-3. 应用生成类似扫码点餐的菜单页，可查看原文热区、中文解释与风险提示。
-4. 同行朋友通过房间码加入，各自选菜并填写忌口备注。
-5. 系统汇总订单并翻译为餐厅所在地语言，直接出示给服务员。
+## How It Works
 
-## 项目结构
+1. A traveler enters a restaurant and photographs the paper menu.
+2. **SeeMenu** sends the image through a two-step Gemini pipeline:
+   - **Step 1 — OCR & Layout**: Gemini identifies dish names, prices, categories, and bounding-box positions on the image (normalized 0–1000 coordinates).
+   - **Step 2 — Enrichment & Translation**: A second Gemini call translates names to Chinese, infers ingredients and allergens, assigns dietary flags, and checks against each diner's personal dietary profile.
+3. An interactive menu page is displayed with image hotspots, Chinese explanations, and risk warnings.
+4. Travel companions join via a **room join code** and each build their own cart with personal dietary notes.
+5. When everyone is ready, the system consolidates the order and generates a **bilingual receipt** — translated into the restaurant's local language for the server, plus Chinese for the diners.
+
+---
+
+## Project Structure
 
 ```
-SeeMenu/
-├── backend/          # Node.js + Express 后端
-│   ├── server.js
-│   └── routes/
-│       ├── scan.js   # 菜单拍照 & Gemini 识别
-│       ├── menu.js   # 菜单数据查询
-│       └── rooms.js  # 多人房间协同
-├── frontend/         # React + Vite Web 前端
-│   └── src/
-│       └── pages/    # 16 个页面（首页、菜单、购物车、房间、订单等）
-├── mobile/           # React Native / Expo 移动端
-│   └── app/          # Expo Router 路由
-│       ├── (tabs)/   # 底部标签（首页、历史、个人）
-│       ├── capture.tsx
-│       ├── menu/     # 菜单列表 & 菜品详情
-│       ├── cart.tsx
-│       ├── room.tsx / join-room.tsx / room-qr.tsx
-│       ├── order.tsx / order-show.tsx
-│       └── ...
-├── start.sh          # 一键启动前后端
+seemenu/
+├── apps/
+│   ├── server/                  # New TypeScript server (Fastify + SQLite)
+│   │   └── src/
+│   │       ├── routes/          # menu, room, receipt endpoints
+│   │       ├── services/        # gemini.service.ts, menu.service.ts, receipt.service.ts
+│   │       ├── schemas/         # Zod schemas (menu.schema.ts)
+│   │       ├── db.ts            # better-sqlite3 database layer
+│   │       ├── store.ts         # in-memory room/scan state
+│   │       ├── types.ts         # shared domain types
+│   │       └── env.ts           # environment config
+│   └── mobile/                  # New Expo 53 / React Native 0.79 app
+│       ├── app/
+│       │   ├── (tabs)/          # Bottom tabs: Home, History, Profile
+│       │   ├── scan/[scanId]    # Scan processing screen
+│       │   ├── menu/[menuId]    # Menu viewer with image hotspots
+│       │   ├── dish/[itemId]    # Dish detail page
+│       │   ├── room/[roomId]    # Collaborative room + QR code
+│       │   ├── receipt/[id]     # Receipt display and share
+│       │   ├── cart.tsx
+│       │   ├── join-room.tsx
+│       │   ├── camera.tsx
+│       │   ├── photo-review.tsx
+│       │   ├── history.tsx
+│       │   ├── profile.tsx
+│       │   └── settings.tsx
+│       └── src/
+│           ├── api/             # Typed API clients (menu, room, receipt)
+│           ├── components/      # DishCard, MenuImageHotspots, ReceiptCard, …
+│           ├── stores/          # Zustand stores (cart, history, profile)
+│           ├── design/          # Design tokens (colors, spacing, typography, …)
+│           ├── types/           # domain.ts
+│           └── utils/           # dietary.ts helpers
+├── backend/                     # Legacy Express backend (original prototype)
+├── mobile/                      # Legacy Expo app (original prototype)
+├── frontend/                    # Legacy React + Vite web frontend
+├── start.sh                     # One-command start (legacy stack)
 └── .env.example
 ```
 
-## 技术栈
+---
 
-| 层 | 技术 |
+## Tech Stack
+
+| Layer | Technology |
 |---|---|
-| 移动端 | React Native / Expo（iOS & Android） |
-| Web 前端 | React + Vite |
-| 后端 | Node.js + Express |
-| AI 识别 | Google Gemini API（图片理解 + 结构化输出） |
-| 多人协同 | 房间码 + 轮询 |
+| Mobile | React Native 0.79 / Expo 53 (iOS & Android) |
+| State management | Zustand 5 · TanStack Query 5 |
+| Server | Fastify 5 · TypeScript · Node.js |
+| Database | SQLite via `better-sqlite3` |
+| AI — OCR & Translation | Google Gemini API (`gemini-2.5-flash`) — two-step pipeline |
+| Image processing | `sharp` (resize, metadata extraction) |
+| Validation | Zod |
+| Collaborative ordering | Room join code · long-polling |
+| QR code | `react-native-qrcode-svg` |
 
-## 本地运行
+---
 
-### 环境准备
+## Getting Started
+
+### Prerequisites
+
+- Node.js 20+
+- A Google [Gemini API key](https://aistudio.google.com/app/apikey)
+
+### 1. Configure environment
 
 ```bash
 cp .env.example .env
-# 填入你的 GEMINI_API_KEY
+# Fill in GEMINI_API_KEY and other values
 ```
 
-### 启动 Web 版（前端 + 后端）
+### 2. Start the new server (`apps/server`)
+
+```bash
+cd apps/server
+npm install
+npm run dev
+```
+
+Server starts on `http://localhost:3001` by default.
+
+### 3. Start the new mobile app (`apps/mobile`)
+
+```bash
+cd apps/mobile
+npm install
+npx expo start
+```
+
+For physical-device testing, set `EXPO_PUBLIC_API_URL` in `.env` to your machine's LAN IP, e.g. `http://192.168.x.x:3001`.
+
+### 4. (Legacy) Start the original web + backend stack
 
 ```bash
 bash start.sh
 ```
 
-- 前端：http://localhost:5173
-- 后端：http://localhost:3001
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:3001`
 
-### 启动移动端
+---
 
-```bash
-cd mobile
-npm install
-npx expo start
-```
+## Environment Variables
 
-真机调试时将 `.env` 中的 `EXPO_PUBLIC_API_URL` 改为电脑局域网 IP，例如 `http://192.168.x.x:3001`。
+| Variable | Description | Default |
+|---|---|---|
+| `GEMINI_API_KEY` | Google Gemini API key | *(required for AI features)* |
+| `GEMINI_MODEL` | Gemini model to use | `gemini-2.5-flash` |
+| `PORT` | Server port | `3001` |
+| `HOST` | Server bind host | `0.0.0.0` |
+| `PUBLIC_BASE_URL` | Public URL of the server (used for image URLs) | `http://localhost:3001` |
+| `DATA_DIR` | Directory for SQLite DB, uploaded images, and receipts | `apps/server/data` |
+| `EXPO_PUBLIC_API_URL` | Backend URL used by the mobile app | `http://localhost:3001` |
 
-## 环境变量
+> **No API key?** The server falls back to bundled sample menu data so you can develop and test the UI without a Gemini key.
 
-| 变量 | 说明 |
-|---|---|
-| `GEMINI_API_KEY` | Google Gemini API 密钥 |
-| `GEMINI_MODEL` | 使用的模型，默认 `gemini-2.5-flash` |
-| `PORT` | 后端端口，默认 `3001` |
-| `PUBLIC_BASE_URL` | 后端对外地址（用于生成图片 URL） |
-| `EXPO_PUBLIC_API_URL` | 移动端访问后端的地址 |
+---
 
-## 注意事项
+## Key Features
 
-- 过敏原和忌口信息仅作风险提示，须保留用户与服务员的二次确认。
-- 未配置 `GEMINI_API_KEY` 时，后端返回本地样例数据，可用于 UI 调试。
+### Two-Step AI Pipeline
+Menu images go through two separate Gemini calls to separate concerns: the first pass is a fast OCR + layout pass (no translation, no guessing); the second pass enriches with translations, ingredient inference, allergen guesses, and dietary flags — keeping each step's prompt focused and the outputs reliable.
+
+### Image Hotspots
+Each recognized dish stores a bounding box (`bbox_2d`) on the original menu image. The mobile app overlays interactive tap targets on the photo so users can tap a dish directly on the menu image to see its details.
+
+### Dietary Profiles
+Every room member has a personal dietary profile (allergies, religion, lifestyle, free-text notes). Gemini's enrichment step checks each dish against the active user's profile and the receipt generator includes all members' restrictions in the translated order.
+
+### Collaborative Rooms
+One person scans and creates a room; others join via a 6-character code or QR code. Each member maintains their own cart and dietary notes. The room can be locked when ordering begins and a shared receipt is generated.
+
+### Bilingual Receipt
+The final order is translated into the restaurant's local language for showing to the server, while the Chinese version remains available for the diners to review. Per-item dietary notes and allergen warnings are included in the translation.
+
+---
+
+## Notes
+
+- Allergen and dietary risk information is provided as AI inference only. Always confirm directly with restaurant staff before ordering.
+- The bounding-box coordinates returned by Gemini are estimates; confidence levels (`high` / `medium` / `low`) are included for both the dish recognition and the bbox position.
+- The `apps/` directory contains the current production-targeted codebase. The top-level `backend/`, `mobile/`, and `frontend/` directories are the original hackathon prototype and remain for reference.

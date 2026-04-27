@@ -4,49 +4,50 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CNav from '../src/components/CNav';
 import Ico from '../src/components/Icons';
 import { useApp } from '../src/context/AppContext';
-import { MENU_BY_ID, FINAL_ORDER } from '../src/data';
+import { t, TARGET_LANG_LABELS, type TargetLang } from '../src/i18n';
+import { dishName } from '../src/data';
 import C from '../src/theme';
 
 export default function OrderScreen() {
-  const { cartLines, cartTotal } = useApp();
+  const { cartLines, menuData, currencySymbol, cartCnTotal, uiLang, detectedLang } = useApp();
+  const s = t(uiLang);
   const insets = useSafeAreaInsets();
+  const menuById = Object.fromEntries(menuData.map(d => [d.id, d]));
 
-  const lines = cartLines.length > 0
-    ? cartLines.map(l => ({ id: l.id, qty: l.qty, note: l.note, by: ['我'] }))
-    : FINAL_ORDER;
+  const lines = cartLines.map(l => ({ id: l.id, qty: l.qty, note: l.note }));
 
   const subtotal = lines.reduce((sum, l) => {
-    const d = MENU_BY_ID[l.id];
-    return d ? sum + parseInt(d.price.replace(/[^\d]/g, '')) * l.qty : sum;
+    const d = menuById[l.id];
+    return d ? sum + parseFloat(d.price.replace(/[^\d.]/g, '') || '0') * l.qty : sum;
   }, 0);
   const tax = Math.round(subtotal * 0.1);
   const total = subtotal + tax;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <CNav title="出示给服务员" right={
+      <CNav title={s.orderTitle} right={
         <View style={styles.langChip}>
           {Ico.globe(C.accent, 12)}
-          <Text style={styles.langText}>中↔日</Text>
+          <Text style={styles.langText}>{uiLang === 'zh' ? '中' : 'EN'}↔{detectedLang ? (TARGET_LANG_LABELS[detectedLang as TargetLang]?.charAt(0) || detectedLang.toUpperCase()) : '日'}</Text>
         </View>
       } />
 
       <View style={[styles.receipt, { top: insets.top + 60 }]}>
         {/* receipt header */}
         <View style={styles.receiptHeader}>
-          <Text style={styles.orderJp}>ご注文</Text>
-          <Text style={styles.orderSub}>ORDER · 订单</Text>
+          <Text style={styles.orderJp}>{s.receiptOrder}</Text>
+          <Text style={styles.orderSub}>ORDER · {s.orderSub}</Text>
           <View style={styles.orderMeta}>
             <Text style={styles.orderMetaText}>2026.04.26 12:34</Text>
-            <Text style={styles.orderMetaText}>3名様 · {lines.reduce((s, l) => s + l.qty, 0)}品</Text>
+            <Text style={styles.orderMetaText}>{s.guestCount(lines.reduce((s, l) => s + l.qty, 0))}</Text>
           </View>
         </View>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 4, paddingHorizontal: 20 }}>
           {lines.map((line, i) => {
-            const d = MENU_BY_ID[line.id];
+            const d = menuById[line.id];
             if (!d) return null;
-            const lt = parseInt(d.price.replace(/[^\d]/g, '')) * line.qty;
+            const lt = parseFloat(d.price.replace(/[^\d.]/g, '') || '0') * line.qty;
             return (
               <View key={i} style={[styles.lineRow, i < lines.length - 1 && styles.lineRowBorder]}>
                 <View style={{ flex: 1 }}>
@@ -54,12 +55,12 @@ export default function OrderScreen() {
                     <Text style={styles.lineJp}>{d.jp}</Text>
                     <Text style={styles.lineQty}>×{line.qty}</Text>
                   </View>
-                  <Text style={styles.lineCn}>{d.cn}</Text>
+                  <Text style={styles.lineCn}>{dishName(d, uiLang)}</Text>
                   {line.note ? (
                     <View style={styles.noteTag}><Text style={styles.noteTagText}>※ {line.note}</Text></View>
                   ) : null}
                 </View>
-                <Text style={styles.linePrice}>¥{lt.toLocaleString()}</Text>
+                <Text style={styles.linePrice}>{currencySymbol}{lt.toLocaleString()}</Text>
               </View>
             );
           })}
@@ -68,26 +69,26 @@ export default function OrderScreen() {
         {/* totals */}
         <View style={styles.totals}>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>小計 SUBTOTAL</Text>
-            <Text style={styles.totalValue}>¥{subtotal.toLocaleString()}</Text>
+            <Text style={styles.totalLabel}>{s.subtotal} SUBTOTAL</Text>
+            <Text style={styles.totalValue}>{currencySymbol}{subtotal.toLocaleString()}</Text>
           </View>
           <View style={styles.totalRow}>
-            <Text style={[styles.totalLabel, { fontSize: 10 }]}>消費税 10%</Text>
-            <Text style={[styles.totalValue, { fontSize: 10 }]}>¥{tax.toLocaleString()}</Text>
+            <Text style={[styles.totalLabel, { fontSize: 10 }]}>{s.tax}</Text>
+            <Text style={[styles.totalValue, { fontSize: 10 }]}>{currencySymbol}{tax.toLocaleString()}</Text>
           </View>
           <View style={styles.grandRow}>
-            <Text style={styles.grandLabel}>合計</Text>
-            <Text style={styles.grandNum}>¥{total.toLocaleString()}</Text>
+            <Text style={styles.grandLabel}>{s.grandTotal}</Text>
+            <Text style={styles.grandNum}>{currencySymbol}{total.toLocaleString()}</Text>
           </View>
-          <Text style={styles.grandCn}>约 ¥{Math.round(total / 20)}</Text>
+          <Text style={styles.grandCn}>{s.approx} ¥{Math.round(cartCnTotal * 1.1)}</Text>
         </View>
       </View>
 
       <View style={[styles.footer, { bottom: insets.bottom + 8 }]}>
         <Pressable onPress={() => router.push('/order-show')} style={styles.showBtn}>
-          <Text style={styles.showBtnText}>放大出示给店员</Text>
+          <Text style={styles.showBtnText}>{s.orderBtnFull}</Text>
         </Pressable>
-        <Text style={styles.footerHint}>把屏幕递给店员，全程不用开口</Text>
+        <Text style={styles.footerHint}>{s.orderHint}</Text>
       </View>
     </View>
   );

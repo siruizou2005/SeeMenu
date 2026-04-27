@@ -5,32 +5,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DishArt from '../../src/components/DishArt';
 import Ico from '../../src/components/Icons';
 import { useApp } from '../../src/context/AppContext';
-import { MENU_BY_ID } from '../../src/data';
+import { t } from '../../src/i18n';
+import { dishName, dishBlurb } from '../../src/data';
 import C from '../../src/theme';
-
-const DIETARY = ['不要葱', '不要香菜', '少盐', '辣', '面硬'];
-const INGREDIENTS: Record<string, string[]> = {
-  tonkotsu: ['猪骨白汤', '溏心蛋', '叉烧', '海苔', '葱花', '麦面'],
-  shoyu: ['酱油汤底', '鸡骨', '昆布', '叉烧', '细面'],
-  gyoza: ['猪肉', '白菜', '姜', '葱', '饺子皮'],
-  karaage: ['鸡腿肉', '生姜', '酱油', '淀粉', '柠檬'],
-  edamame: ['毛豆', '海盐'],
-  tamago: ['鸡蛋', '酱油', '味淋'],
-  chashu: ['猪五花', '酱汁', '葱油', '米饭'],
-  highball: ['威士忌', '苏打水', '冰块'],
-};
 
 export default function DetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { cart, addItem, removeItem } = useApp();
+  const { cart, addItem, removeItem, menuData, uiLang } = useApp();
+  const s = t(uiLang);
   const insets = useSafeAreaInsets();
   const [selectedDietary, setSelectedDietary] = useState<string[]>([]);
-  const d = MENU_BY_ID[id];
+  const d = menuData.find(dish => dish.id === id);
   if (!d) return null;
 
   const qty = cart[d.id] || 0;
-  const ingredients = INGREDIENTS[d.id] || [];
-  const toggleDiet = (t: string) => setSelectedDietary(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
+  const toggleDiet = (opt: string) => setSelectedDietary(prev => prev.includes(opt) ? prev.filter(x => x !== opt) : [...prev, opt]);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -39,7 +28,7 @@ export default function DetailScreen() {
         <DishArt dish={d} w={343} h={240} rounded={0} />
         <View style={styles.aiBadge}>
           {Ico.sparkle('#fff', 10)}
-          <Text style={styles.aiBadgeText}>AI 示意图</Text>
+          <Text style={styles.aiBadgeText}>{s.aiImage}</Text>
         </View>
         <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           {Ico.back(C.ink, 16)}
@@ -51,9 +40,9 @@ export default function DetailScreen() {
           <View style={{ flex: 1 }}>
             <View style={styles.tags}>
               {d.tag && <View style={styles.tagAccent}><Text style={styles.tagAccentText}>{d.tag}</Text></View>}
-              <View style={styles.tagMuted}><Text style={styles.tagMutedText}>店主推荐</Text></View>
+              <View style={styles.tagMuted}><Text style={styles.tagMutedText}>{s.ownerPick}</Text></View>
             </View>
-            <Text style={styles.cn}>{d.cn}</Text>
+            <Text style={styles.cn}>{dishName(d, uiLang)}</Text>
             <Text style={styles.jp}>{d.jp} · {d.romaji}</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
@@ -62,24 +51,15 @@ export default function DetailScreen() {
           </View>
         </View>
 
-        <Text style={styles.blurb}>{d.blurb}</Text>
+        <Text style={styles.blurb}>{dishBlurb(d, uiLang)}</Text>
 
-        {ingredients.length > 0 && (
-          <>
-            <Text style={styles.sectionLabel}>主要食材</Text>
-            <View style={styles.chips}>
-              {ingredients.map(t => <View key={t} style={styles.chip}><Text style={styles.chipText}>{t}</Text></View>)}
-            </View>
-          </>
-        )}
-
-        <Text style={styles.sectionLabel}>忌口与备注</Text>
+        <Text style={styles.sectionLabel}>{s.dietaryNotes}</Text>
         <View style={styles.chips}>
-          {DIETARY.map(t => {
-            const sel = selectedDietary.includes(t);
+          {s.dietaryOptions.map(opt => {
+            const sel = selectedDietary.includes(opt);
             return (
-              <Pressable key={t} onPress={() => toggleDiet(t)} style={[styles.dietChip, sel && styles.dietChipActive]}>
-                <Text style={[styles.dietChipText, sel && styles.dietChipTextActive]}>{sel ? '✓ ' : ''}{t}</Text>
+              <Pressable key={opt} onPress={() => toggleDiet(opt)} style={[styles.dietChip, sel && styles.dietChipActive]}>
+                <Text style={[styles.dietChipText, sel && styles.dietChipTextActive]}>{sel ? '✓ ' : ''}{opt}</Text>
               </Pressable>
             );
           })}
@@ -94,7 +74,7 @@ export default function DetailScreen() {
           <Pressable onPress={() => addItem(d.id)} style={styles.stepBtnDark}>{Ico.plus('#fff', 14)}</Pressable>
         </View>
         <Pressable onPress={() => { if (qty === 0) addItem(d.id); router.push('/cart'); }} style={styles.addToCart}>
-          <Text style={styles.addToCartText}>{qty > 0 ? `已加 ${qty} 份 · 去结单` : `加入订单 · ${d.price}`}</Text>
+          <Text style={styles.addToCartText}>{qty > 0 ? s.addedQty(qty) : s.addToOrder(d.price)}</Text>
         </Pressable>
       </View>
     </View>

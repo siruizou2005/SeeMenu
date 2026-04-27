@@ -1,31 +1,31 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, TextInput, ScrollView, FlatList, Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../src/context/AppContext';
-import { SAMPLE_MENU, type Dish } from '../../src/data';
 import DishArt from '../../src/components/DishArt';
 import Ico from '../../src/components/Icons';
 import C from '../../src/theme';
-
-const CATS = ['全部', '招牌', 'ラーメン', 'おつまみ', 'ご飯', 'ドリンク'];
-const CAT_KEYS: Record<string, (d: Dish) => boolean> = {
-  '招牌': d => d.tag === '招牌' || d.tag === '热门',
-  'ラーメン': d => d.cat.includes('ラーメン'),
-  'おつまみ': d => d.cat.includes('おつまみ'),
-  'ご飯': d => d.cat.includes('ご飯'),
-  'ドリンク': d => d.cat.includes('ドリンク'),
-};
+import { t } from '../../src/i18n';
+import { dishName, dishBlurb } from '../../src/data';
 
 export default function MenuScreen() {
-  const { cart, addItem, removeItem, cartCount, cartTotal } = useApp();
+  const { cart, addItem, removeItem, cartCount, cartTotal, cartCnTotal, currencySymbol, menuData, uiLang } = useApp();
+  const s = t(uiLang);
   const insets = useSafeAreaInsets();
-  const [activeCat, setActiveCat] = useState('全部');
+  const [activeCat, setActiveCat] = useState<string>(s.allCategory);
   const [search, setSearch] = useState('');
 
-  const filtered = SAMPLE_MENU.filter(d => {
-    const matchCat = activeCat === '全部' || (CAT_KEYS[activeCat]?.(d));
-    const matchSearch = !search || d.cn.includes(search) || d.jp.includes(search);
+  const cats = useMemo(() => {
+    const unique = Array.from(new Set(menuData.map(d => d.cat).filter(Boolean)));
+    return [s.allCategory, ...unique];
+  }, [menuData, s.allCategory]);
+
+  const filtered = menuData.filter(d => {
+    const matchCat = activeCat === s.allCategory || d.cat === activeCat;
+    const q = search.toLowerCase();
+    const matchSearch = !search || d.cn.toLowerCase().includes(q) || d.jp.toLowerCase().includes(q)
+      || d.romaji.toLowerCase().includes(q) || (d.cnEn?.toLowerCase().includes(q) ?? false);
     return matchCat && matchSearch;
   });
 
@@ -34,26 +34,26 @@ export default function MenuScreen() {
       {/* header */}
       <View style={styles.header}>
         <View style={styles.headerMeta}>
-          <Text style={styles.metaText}>东京</Text>
+          <Text style={styles.metaText}>{s.mockCity}</Text>
           <View style={styles.dot} />
-          <Text style={styles.metaText}>日文菜单</Text>
+          <Text style={styles.metaText}>{s.menuLanguage(s.mockMenuSourceLang)}</Text>
           <View style={styles.usersChip}>
             {Ico.users(C.accent, 12)}
-            <Text style={styles.usersText}>3 人</Text>
+            <Text style={styles.usersText}>{s.peopleCount(3)}</Text>
           </View>
         </View>
-        <Text style={styles.restaurantName}>麺処 つばき</Text>
+        <Text style={styles.restaurantName}>{s.mockRestaurant}</Text>
       </View>
 
       {/* search */}
       <View style={styles.searchBar}>
         {Ico.search(C.muted, 14)}
-        <TextInput value={search} onChangeText={setSearch} placeholder="搜索菜品" style={styles.searchInput} placeholderTextColor={C.muted} />
+        <TextInput value={search} onChangeText={setSearch} placeholder={s.searchPlaceholder} style={styles.searchInput} placeholderTextColor={C.muted} />
       </View>
 
       {/* categories */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScrollView} contentContainerStyle={styles.catStrip}>
-        {CATS.map(c => (
+        {cats.map(c => (
           <Pressable key={c} onPress={() => setActiveCat(c)} style={[styles.catPill, activeCat === c && styles.catPillActive]}>
             <Text style={[styles.catText, activeCat === c && styles.catTextActive]}>{c}</Text>
           </Pressable>
@@ -71,11 +71,11 @@ export default function MenuScreen() {
             <DishArt dish={d} w={72} h={72} rounded={12} />
             <View style={styles.dishInfo}>
               <View style={styles.dishNameRow}>
-                <Text style={styles.dishName}>{d.cn}</Text>
-                {d.tag && <View style={styles.tag}><Text style={styles.tagText}>{d.tag}</Text></View>}
+                <Text style={styles.dishName}>{dishName(d, uiLang)}</Text>
+                {d.tag && <View style={styles.tag}><Text style={styles.tagText}>{d.tag === 'signature' ? s.signature : d.tag === 'popular' ? s.popular : d.tag}</Text></View>}
               </View>
               <Text style={styles.dishJp} numberOfLines={1}>{d.jp}</Text>
-              <Text style={styles.dishBlurb} numberOfLines={2}>{d.blurb}</Text>
+              <Text style={styles.dishBlurb} numberOfLines={2}>{dishBlurb(d, uiLang)}</Text>
               <View style={styles.dishFooter}>
                 <View>
                   <Text style={styles.dishPrice}>{d.price}</Text>
@@ -106,10 +106,10 @@ export default function MenuScreen() {
             <View style={styles.cartBadge}><Text style={styles.cartBadgeText}>{cartCount}</Text></View>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.cartTotal}>¥{cartTotal.toLocaleString()}</Text>
-            <Text style={styles.cartCn}>约 ¥{Math.round(cartTotal / 20)}</Text>
+            <Text style={styles.cartTotal}>{currencySymbol}{cartTotal.toLocaleString()}</Text>
+            <Text style={styles.cartCn}>{s.approx} ¥{Math.round(cartCnTotal)}</Text>
           </View>
-          <View style={styles.cartAction}><Text style={styles.cartActionText}>选好</Text></View>
+          <View style={styles.cartAction}><Text style={styles.cartActionText}>{s.cartAction}</Text></View>
         </Pressable>
       )}
     </View>

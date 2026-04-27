@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,77 +6,143 @@ import Animated, { useSharedValue, withTiming, useAnimatedStyle } from 'react-na
 import Svg, { Circle } from 'react-native-svg';
 import CNav from '../src/components/CNav';
 import Ico from '../src/components/Icons';
+import { useApp } from '../src/context/AppContext';
+import { t } from '../src/i18n';
 import C from '../src/theme';
 
-const ALL_ITEMS = [
-  { jp: '豚骨ラーメン', cn: '豚骨拉面', state: 'pending' },
-  { jp: '醤油ラーメン', cn: '酱油拉面', state: 'pending' },
-  { jp: '焼き餃子',     cn: '煎饺',     state: 'pending' },
-  { jp: '鶏の唐揚げ',   cn: '日式炸鸡', state: 'pending' },
-  { jp: '枝豆',         cn: null,        state: 'pending' },
-  { jp: 'チャーシュー丼', cn: null,      state: 'pending' },
-  { jp: '味付け玉子',   cn: null,        state: 'pending' },
-];
-
-const STEPS = ['识别', '翻译', '配图', '整理'];
 const ITEM_HEIGHT = 21;
 const RING_R = 13;
 const RING_CIRC = 2 * Math.PI * RING_R;
 
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001';
+
+type ItemRow = { jp: string; cn: string | null };
+
 export default function RecognizingScreen() {
   const insets = useSafeAreaInsets();
-  const [items, setItems] = useState(ALL_ITEMS);
+  const { capturedPhoto, setMenuData, addHistory, targetLang, uiLang, setDetectedLang } = useApp();
+  const s = t(uiLang);
+
+  const [items, setItems] = useState<ItemRow[]>([]);
   const [doneCount, setDoneCount] = useState(0);
   const [stepIdx, setStepIdx] = useState(0);
+  const STEPS = s.scanSteps;
 
   const beamTop = useSharedValue(40);
   const beamStyle = useAnimatedStyle(() => ({ top: beamTop.value }));
 
+  const progress = doneCount / Math.max(doneCount + 3, 6);
+  const dashOffset = RING_CIRC * (1 - progress);
+
+  const navigatedRef = useRef(false);
+
   useEffect(() => {
-    let idx = 0;
-    const tid = setInterval(() => {
-      if (idx >= ALL_ITEMS.length) {
-        clearInterval(tid);
-        setTimeout(() => router.replace('/menu'), 600);
-        return;
+    if (!capturedPhoto) {
+      router.replace('/recognize-fail');
+      return;
+    }
+    try {
+      startScan(capturedPhoto);
+    } catch {
+      if (!navigatedRef.current) {
+        navigatedRef.current = true;
+        router.replace('/recognize-fail');
       }
-      setItems(prev => {
-        const next = [...prev];
-        if (idx > 0) next[idx - 1] = { ...next[idx - 1], state: 'done' };
-        if (idx < next.length) next[idx] = { ...next[idx], state: 'active' };
-        return next;
-      });
-      setDoneCount(idx);
-      setStepIdx(Math.min(Math.floor(idx / 2), STEPS.length - 1));
-      beamTop.value = withTiming(40 + idx * ITEM_HEIGHT, { duration: 500 });
-      idx++;
-    }, 500);
-    return () => clearInterval(tid);
+    }
   }, []);
 
-  const progress = doneCount / ALL_ITEMS.length;
-  const dashOffset = RING_CIRC * (1 - progress);
+  function startScan(photoUri: string) {
+    const formData = new FormData();
+    formData.append('photo', {
+      uri: photoUri,
+      name: 'menu.jpg',
+      type: 'image/jpeg',
+    } as any);
+    formData.append('targetLang', uiLang);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API_URL}/api/scan/progress`);
+
+    let processed = 0;
+
+    const processText = (text: string) => {
+      const lines = text.split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        let data: any;
+        try { data = JSON.parse(line.slice(6)); } catch { continue; }
+
+        if (data.type === 'detected') {
+          setDetectedLang(data.lang);
+        } else if (data.type === 'item') {
+          const { item, done: n, stepIdx: si } = data;
+          setItems(prev => [...prev, { jp: item.jp, cn: item.cn }]);
+          setDoneCount(n);
+          setStepIdx(si);
+          beamTop.value = withTiming(40 + n * ITEM_HEIGHT, { duration: 300 });
+        } else if (data.type === 'done') {
+          if (navigatedRef.current) return;
+          navigatedRef.current = true;
+          setMenuData(data.items);
+          addHistory(data.items);
+          setTimeout(() => router.replace('/menu'), 400);
+        } else if (data.type === 'error') {
+          if (!navigatedRef.current) {
+            navigatedRef.current = true;
+            router.replace('/recognize-fail');
+          }
+        }
+      }
+    };
+
+    xhr.onprogress = () => {
+      const newText = xhr.responseText.slice(processed);
+      processed = xhr.responseText.length;
+      if (newText) processText(newText);
+    };
+
+    xhr.onload = () => {
+      const remaining = xhr.responseText.slice(processed);
+      if (remaining) processText(remaining);
+      if (!navigatedRef.current) {
+        navigatedRef.current = true;
+        router.replace('/recognize-fail');
+      }
+    };
+
+    xhr.onerror = () => {
+      if (!navigatedRef.current) {
+        navigatedRef.current = true;
+        router.replace('/recognize-fail');
+      }
+    };
+
+    xhr.send(formData);
+  }
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <CNav title="识别中" sub="保持手机稳定" back={false} />
+      <CNav title={s.scanTitle} sub={s.scanSub} back={false} />
 
       <View style={[styles.preview, { top: insets.top + 56 }]}>
         <View style={styles.previewInner}>
           <View style={styles.menuCard}>
-            <Text style={styles.menuTitle}>麺処 つばき</Text>
+            <Text style={styles.menuTitle}>{s.scanCardTitle}</Text>
             <View style={styles.menuDivider} />
-            {items.map((it, i) => (
-              <View key={i} style={[styles.menuRow, { opacity: it.state === 'pending' ? 0.4 : 1 }]}>
-                <Text style={styles.menuRowText}>{it.jp}</Text>
-                {it.cn && it.state === 'done' && (
-                  <View style={styles.cnBadge}><Text style={styles.cnBadgeText}>{it.cn}</Text></View>
-                )}
-                {it.state === 'active' && (
-                  <View style={styles.processingBadge}><Text style={styles.processingText}>翻译中…</Text></View>
-                )}
+            {items.length === 0 ? (
+              <View style={styles.menuRow}>
+                <Text style={[styles.menuRowText, { color: '#8a7060', fontStyle: 'italic' }]}>{s.scanWaiting}</Text>
               </View>
-            ))}
+            ) : (
+              items.map((it, i) => (
+                <View key={i} style={styles.menuRow}>
+                  <Text style={styles.menuRowText} numberOfLines={1}>{it.jp}</Text>
+                  {it.cn && (
+                    <View style={styles.cnBadge}><Text style={styles.cnBadgeText}>{it.cn}</Text></View>
+                  )}
+                </View>
+              ))
+            )}
             <Animated.View style={[styles.scanBeam, beamStyle]} />
           </View>
         </View>
@@ -99,8 +165,12 @@ export default function RecognizingScreen() {
             <Text style={styles.pct}>{Math.round(progress * 100)}%</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.sheetTitle}>识别 {doneCount} / {ALL_ITEMS.length} 道菜</Text>
-            <Text style={styles.sheetSub}>预计还需 {ALL_ITEMS.length - doneCount} 秒</Text>
+            <Text style={styles.sheetTitle}>
+              {doneCount === 0 ? s.scanWaiting : s.scanDone(doneCount)}
+            </Text>
+            <Text style={styles.sheetSub}>
+              {doneCount > 0 ? s.scanStep(STEPS[stepIdx]) : ''}
+            </Text>
           </View>
           {Ico.sparkle(C.accent, 16)}
         </View>
@@ -124,15 +194,13 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   preview: { position: 'absolute', left: 20, right: 20, bottom: 220 },
   previewInner: { flex: 1, backgroundColor: C.bg2, borderRadius: 16, padding: 16 },
-  menuCard: { flex: 1, backgroundColor: '#f0e4c8', borderRadius: 6, padding: 16, position: 'relative', overflow: 'hidden' },
+  menuCard: { flex: 1, backgroundColor: '#f0e4c8', borderRadius: 6, padding: 16, position: 'relative', overflow: 'hidden', minHeight: 120 },
   menuTitle: { textAlign: 'center', fontSize: 14, fontWeight: '700', color: '#2a1a08', letterSpacing: 2 },
   menuDivider: { height: 1, backgroundColor: '#2a1a08', marginVertical: 8, marginHorizontal: 24 },
   menuRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 5 },
   menuRowText: { fontSize: 11, color: '#2a1a08', flex: 1 },
   cnBadge: { backgroundColor: C.accent, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 3 },
   cnBadgeText: { fontSize: 9, color: '#fff', fontWeight: '600' },
-  processingBadge: { backgroundColor: '#fff', borderWidth: 0.5, borderColor: C.muted2, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 3 },
-  processingText: { fontSize: 9, color: C.muted },
   scanBeam: {
     position: 'absolute', left: 14, right: 14, height: 1.5,
     backgroundColor: C.accent,

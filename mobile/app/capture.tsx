@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '../src/context/AppContext';
+import { t } from '../src/i18n';
 import Ico from '../src/components/Icons';
 import C from '../src/theme';
 
@@ -13,7 +14,8 @@ const MENU_ITEMS = [
 ];
 
 export default function CaptureScreen() {
-  const { setCapturedPhoto } = useApp();
+  const { setCapturedPhoto, uiLang } = useApp();
+  const s = t(uiLang);
   const insets = useSafeAreaInsets();
 
   const handleAlbum = async () => {
@@ -67,15 +69,15 @@ export default function CaptureScreen() {
       <View style={[styles.vfCorner, styles.br, { bottom: 200, right: 22 }]} />
 
       <View style={[styles.hint, { top: insets.top + 62 }]}>
-        <Text style={styles.hintText}>将菜单完整放入框内</Text>
+        <Text style={styles.hintText}>{s.captureMenuFrame}</Text>
       </View>
 
       {/* bottom controls */}
       <View style={[styles.controls, { paddingBottom: insets.bottom + 20 }]}>
         <View style={styles.modeLine}>
-          <Text style={styles.modeInactive}>相册</Text>
-          <Text style={styles.modeActive}>· 菜单 ·</Text>
-          <Text style={styles.modeInactive}>扫码</Text>
+          <Text style={styles.modeInactive}>{s.captureAlbum}</Text>
+          <Text style={styles.modeActive}>· {s.captureMenuLabel} ·</Text>
+          <Text style={styles.modeInactive}>{s.captureQR}</Text>
         </View>
         <View style={styles.buttons}>
           <Pressable onPress={handleAlbum} style={styles.sideBtn}>

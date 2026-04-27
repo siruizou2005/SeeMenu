@@ -14,7 +14,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.seemenu"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +23,10 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -31,10 +35,14 @@
     },
     "plugins": [
       "expo-router",
-      ["expo-image-picker", {
-        "cameraPermission": "SeeMenu 需要访问相机来拍菜单",
-        "photosPermission": "SeeMenu 需要访问相册来选菜单图片"
-      }]
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "SeeMenu 需要访问相机来拍菜单",
+          "photosPermission": "SeeMenu 需要访问相册来选菜单图片"
+        }
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

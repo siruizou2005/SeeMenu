@@ -3,14 +3,18 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CNav from '../src/components/CNav';
 import Ico from '../src/components/Icons';
-import { ROOM_MEMBERS, MENU_BY_ID } from '../src/data';
+import { ROOM_MEMBERS, MENU_BY_ID, memberName, dishName } from '../src/data';
+import { useApp } from '../src/context/AppContext';
+import { t } from '../src/i18n';
 import C from '../src/theme';
 
 export default function RoomScreen() {
+  const { uiLang } = useApp();
+  const s = t(uiLang);
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <CNav title="用餐房间" sub="麺処 つばき" right={
+      <CNav title={s.diningRoom} sub="麺処 つばき" right={
         <Pressable hitSlop={8}>{Ico.share(C.ink, 16)}</Pressable>
       } />
 
@@ -19,18 +23,18 @@ export default function RoomScreen() {
         <View style={styles.codeCard}>
           <Text style={styles.codeLabel}>ROOM CODE</Text>
           <Text style={styles.code}>73KQ</Text>
-          <Text style={styles.codeHint}>朋友打开 SeeMenu 输入此码即可加入</Text>
+          <Text style={styles.codeHint}>{s.roomCodeHint}</Text>
           <View style={styles.codeActions}>
-            <Pressable style={styles.shareBtn}><Text style={styles.shareBtnText}>分享</Text></Pressable>
-            <Pressable onPress={() => router.push('/room-qr')} style={styles.qrBtn}><Text style={styles.qrBtnText}>显示二维码</Text></Pressable>
+            <Pressable style={styles.shareBtn}><Text style={styles.shareBtnText}>{s.share}</Text></Pressable>
+            <Pressable onPress={() => router.push('/room-qr')} style={styles.qrBtn}><Text style={styles.qrBtnText}>{s.showQR}</Text></Pressable>
           </View>
         </View>
 
         <View style={styles.membersHeader}>
-          <Text style={styles.membersTitle}>房间内 · {ROOM_MEMBERS.length} 人</Text>
+          <Text style={styles.membersTitle}>{s.roomMembers(ROOM_MEMBERS.length)}</Text>
           <View style={styles.syncStatus}>
             <Text style={styles.syncDot}>●</Text>
-            <Text style={styles.syncText}>实时同步</Text>
+            <Text style={styles.syncText}>{s.liveSync}</Text>
           </View>
         </View>
 
@@ -42,14 +46,14 @@ export default function RoomScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <View style={styles.memberNameRow}>
-                  <Text style={styles.memberName}>{m.name}</Text>
-                  {m.id === 'me' && <Text style={styles.memberYou}>· 你</Text>}
-                  <Text style={styles.memberCount}>{m.picks.length} 道</Text>
+                  <Text style={styles.memberName}>{memberName(m, uiLang)}</Text>
+                  {m.id === 'me' && <Text style={styles.memberYou}>· {s.you}</Text>}
+                  <Text style={styles.memberCount}>{s.dishesUnit(m.picks.length)}</Text>
                 </View>
                 <View style={styles.picks}>
                   {m.picks.map(pid => (
                     <View key={pid} style={styles.pickChip}>
-                      <Text style={styles.pickChipText}>{MENU_BY_ID[pid]?.cn}</Text>
+                      <Text style={styles.pickChipText}>{MENU_BY_ID[pid] ? dishName(MENU_BY_ID[pid], uiLang) : pid}</Text>
                     </View>
                   ))}
                   {m.note ? <Text style={styles.memberNote}>※ {m.note}</Text> : null}
@@ -62,11 +66,11 @@ export default function RoomScreen() {
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
         <View>
-          <Text style={styles.footerLabel}>合计 8 份</Text>
+          <Text style={styles.footerLabel}>{s.totalDishes(8)}</Text>
           <Text style={styles.footerTotal}>¥6,640</Text>
         </View>
         <Pressable onPress={() => router.push('/order')} style={styles.orderBtn}>
-          <Text style={styles.orderBtnText}>生成订单 →</Text>
+          <Text style={styles.orderBtnText}>{s.generateOrder}</Text>
         </Pressable>
       </View>
     </View>

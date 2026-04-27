@@ -6,10 +6,13 @@ import CNav from '../src/components/CNav';
 import DishArt from '../src/components/DishArt';
 import Ico from '../src/components/Icons';
 import { useApp } from '../src/context/AppContext';
+import { t } from '../src/i18n';
+import { dishName } from '../src/data';
 import C from '../src/theme';
 
 export default function CartScreen() {
-  const { cartLines, addItem, removeItem, setNote, cartCount, cartTotal } = useApp();
+  const { cartLines, addItem, removeItem, setNote, cartCount, cartTotal, cartCnTotal, currencySymbol, uiLang } = useApp();
+  const s = t(uiLang);
   const insets = useSafeAreaInsets();
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteInput, setNoteInput] = useState('');
@@ -17,12 +20,12 @@ export default function CartScreen() {
   if (cartLines.length === 0) {
     return (
       <View style={[styles.root, { paddingTop: insets.top }]}>
-        <CNav title="我的选菜" sub="购物车为空" />
+        <CNav title={s.myOrder} />
         <View style={styles.empty}>
           <Text style={styles.emptyEmoji}>🛒</Text>
-          <Text style={styles.emptyText}>还没有选菜</Text>
+          <Text style={styles.emptyText}>{s.emptyCart}</Text>
           <Pressable onPress={() => router.push('/menu')} style={styles.emptyBtn}>
-            <Text style={styles.emptyBtnText}>去看菜单</Text>
+            <Text style={styles.emptyBtnText}>{s.browseMenu}</Text>
           </Pressable>
         </View>
       </View>
@@ -31,9 +34,7 @@ export default function CartScreen() {
 
   return (
     <KeyboardAvoidingView style={[styles.root, { paddingTop: insets.top }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <CNav title="我的选菜" sub={`${cartLines.length} 道 · ${cartCount} 份`} right={
-        <View style={styles.roomChip}><Text style={styles.roomChipText}>房间 73KQ</Text></View>
-      } />
+      <CNav title={s.myOrder} sub={s.totalLabel(cartCount)} />
       <ScrollView style={styles.scroll} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8 }}>
         {cartLines.map((l, i) => (
           <View key={l.id} style={[styles.row, i > 0 && styles.rowBorder]}>
@@ -41,7 +42,7 @@ export default function CartScreen() {
             <View style={{ flex: 1 }}>
               <View style={styles.rowTop}>
                 <View>
-                  <Text style={styles.dishName}>{l.dish.cn}</Text>
+                  <Text style={styles.dishName}>{dishName(l.dish, uiLang)}</Text>
                   <Text style={styles.dishJp}>{l.dish.jp}</Text>
                 </View>
                 <Text style={styles.dishPrice}>{l.dish.price}</Text>
@@ -49,9 +50,9 @@ export default function CartScreen() {
 
               {editingNote === l.id ? (
                 <View style={styles.noteEdit}>
-                  <TextInput autoFocus value={noteInput} onChangeText={setNoteInput} placeholder="备注忌口..." style={styles.noteInput} placeholderTextColor={C.muted} />
+                  <TextInput autoFocus value={noteInput} onChangeText={setNoteInput} placeholder={s.notePlaceholder} style={styles.noteInput} placeholderTextColor={C.muted} />
                   <Pressable onPress={() => { setNote(l.id, noteInput); setEditingNote(null); }} style={styles.noteConfirm}>
-                    <Text style={styles.noteConfirmText}>确认</Text>
+                    <Text style={styles.noteConfirmText}>{s.noteConfirm}</Text>
                   </Pressable>
                 </View>
               ) : l.note ? (
@@ -60,7 +61,7 @@ export default function CartScreen() {
                 </Pressable>
               ) : (
                 <Pressable onPress={() => { setEditingNote(l.id); setNoteInput(''); }}>
-                  <Text style={styles.addNote}>+ 添加备注</Text>
+                  <Text style={styles.addNote}>{s.addNote}</Text>
                 </Pressable>
               )}
 
@@ -77,14 +78,14 @@ export default function CartScreen() {
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
         <View>
-          <Text style={styles.footerLabel}>合计 {cartCount} 份</Text>
+          <Text style={styles.footerLabel}>{s.totalLabel(cartCount)}</Text>
           <View style={styles.footerTotal}>
-            <Text style={styles.footerTotalNum}>¥{cartTotal.toLocaleString()}</Text>
-            <Text style={styles.footerCn}> 约 ¥{Math.round(cartTotal / 20)}</Text>
+            <Text style={styles.footerTotalNum}>{currencySymbol}{cartTotal.toLocaleString()}</Text>
+            <Text style={styles.footerCn}> {s.approxRef} ¥{Math.round(cartCnTotal)}</Text>
           </View>
         </View>
         <Pressable onPress={() => router.push('/order')} style={styles.confirmBtn}>
-          <Text style={styles.confirmBtnText}>确认 · 出示给店员</Text>
+          <Text style={styles.confirmBtnText}>{s.showWaiter}</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>

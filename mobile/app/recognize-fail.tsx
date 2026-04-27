@@ -3,15 +3,18 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 import CNav from '../src/components/CNav';
+import { useApp } from '../src/context/AppContext';
+import { t } from '../src/i18n';
 import C from '../src/theme';
-
-const TIPS = ['把菜单整体放进取景框', '保持手机平稳，避免抖动', '尽量正面拍摄，不要倾斜', '光线充足、避免反光'];
 
 export default function RecognizeFailScreen() {
   const insets = useSafeAreaInsets();
+  const { uiLang } = useApp();
+  const s = t(uiLang);
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <CNav title="识别中" />
+      <CNav title={s.scanTitle} />
       <View style={styles.body}>
         <View style={styles.iconCircle}>
           <Svg width={40} height={40} viewBox="0 0 40 40" fill="none">
@@ -19,24 +22,24 @@ export default function RecognizeFailScreen() {
             <Path d="M20 12v10M20 26v2" stroke={C.muted} strokeWidth="2" strokeLinecap="round" />
           </Svg>
         </View>
-        <Text style={styles.title}>没能识别这张菜单</Text>
-        <Text style={styles.sub}>照片可能模糊、反光或角度倾斜{'\n'}试试重新拍一张，把菜单铺平、光线充足</Text>
+        <Text style={styles.title}>{s.scanFailed}</Text>
+        <Text style={styles.sub}>{s.scanFailSub}</Text>
         <View style={styles.tipsCard}>
-          <Text style={styles.tipsTitle}>拍照小提示</Text>
-          {TIPS.map((t, i) => (
+          <Text style={styles.tipsTitle}>{s.tipsTitle}</Text>
+          {s.scanTips.map((tip, i) => (
             <View key={i} style={styles.tipRow}>
               <Text style={styles.tipDot}>·</Text>
-              <Text style={styles.tipText}>{t}</Text>
+              <Text style={styles.tipText}>{tip}</Text>
             </View>
           ))}
         </View>
       </View>
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <Pressable onPress={() => router.replace('/capture')} style={styles.outlineBtn}>
-          <Text style={styles.outlineBtnText}>从相册选</Text>
+          <Text style={styles.outlineBtnText}>{s.fromGallery}</Text>
         </Pressable>
         <Pressable onPress={() => router.replace('/capture')} style={styles.solidBtn}>
-          <Text style={styles.solidBtnText}>重新拍</Text>
+          <Text style={styles.solidBtnText}>{s.retryPhoto}</Text>
         </Pressable>
       </View>
     </View>

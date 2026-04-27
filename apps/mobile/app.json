@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "SeeMenu",
+    "slug": "seemenu",
+    "scheme": "seemenu",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "SeeMenu needs camera access to scan restaurant menus.",
+        "NSPhotoLibraryUsageDescription": "SeeMenu needs photo access to upload menu photos and save order images."
+      }
+    },
+    "android": {
+      "permissions": ["CAMERA", "READ_MEDIA_IMAGES", "WRITE_EXTERNAL_STORAGE"]
+    },
+    "plugins": ["expo-router", "expo-camera", "expo-image-picker", "expo-media-library"]
+  }
+}

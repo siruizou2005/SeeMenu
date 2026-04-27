@@ -4,12 +4,16 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CNav from '../src/components/CNav';
 import Ico from '../src/components/Icons';
+import { useApp } from '../src/context/AppContext';
+import { t } from '../src/i18n';
 import C from '../src/theme';
 
 const KEYS = [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9'], ['', '0', '⌫']];
 
 export default function JoinRoomScreen() {
   const [code, setCode] = useState('');
+  const { uiLang } = useApp();
+  const s = t(uiLang);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -27,10 +31,10 @@ export default function JoinRoomScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <CNav title="加入房间" />
+      <CNav title={s.joinRoom} />
       <View style={styles.body}>
-        <Text style={styles.title}>输入房间码</Text>
-        <Text style={styles.sub}>请向已经在房间的朋友要 4 位房间码</Text>
+        <Text style={styles.title}>{s.enterCode}</Text>
+        <Text style={styles.sub}>{s.enterCodeHint}</Text>
 
         <View style={styles.boxes}>
           {[0, 1, 2, 3].map(i => {
@@ -48,8 +52,8 @@ export default function JoinRoomScreen() {
         <Pressable style={styles.scanRow}>
           <View style={styles.scanIcon}>{Ico.scan(C.ink, 16)}</View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.scanTitle}>扫描朋友的二维码</Text>
-            <Text style={styles.scanSub}>更快、不会输错</Text>
+            <Text style={styles.scanTitle}>{s.scanFriendQR}</Text>
+            <Text style={styles.scanSub}>{s.scanFriendHint}</Text>
           </View>
           <Text style={styles.scanArrow}>›</Text>
         </Pressable>

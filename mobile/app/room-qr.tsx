@@ -3,17 +3,21 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Rect, Circle } from 'react-native-svg';
 import Ico from '../src/components/Icons';
+import { useApp } from '../src/context/AppContext';
+import { t } from '../src/i18n';
 import C from '../src/theme';
 
 export default function RoomQRScreen() {
+  const { uiLang } = useApp();
+  const s = t(uiLang);
   const insets = useSafeAreaInsets();
   return (
     <View style={styles.root}>
       <Pressable style={StyleSheet.absoluteFillObject} onPress={() => router.back()} />
       <View style={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}>
         <View style={styles.handle} />
-        <Text style={styles.title}>邀请朋友加入</Text>
-        <Text style={styles.sub}>扫码即可看到同一份菜单</Text>
+        <Text style={styles.title}>{s.inviteFriends}</Text>
+        <Text style={styles.sub}>{s.inviteHint}</Text>
 
         {/* QR placeholder */}
         <View style={styles.qrWrap}>
@@ -45,10 +49,10 @@ export default function RoomQRScreen() {
         <View style={styles.actions}>
           <Pressable style={styles.wechatBtn}>
             {Ico.share(C.ink, 14)}
-            <Text style={styles.wechatBtnText}>微信分享</Text>
+            <Text style={styles.wechatBtnText}>{s.wechatShare}</Text>
           </Pressable>
           <Pressable style={styles.saveBtn}>
-            <Text style={styles.saveBtnText}>保存图片</Text>
+            <Text style={styles.saveBtnText}>{s.saveImage}</Text>
           </Pressable>
         </View>
       </View>

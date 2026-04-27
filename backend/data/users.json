@@ -1,0 +1,32 @@
+[
+  {
+    "id": "1777245697246",
+    "username": "test",
+    "hash": "$2b$10$4qjb177NXGJIKYAlFqu8sOwnWNVNRq2ZbW3sj5EITAXn8KoODhu9O",
+    "createdAt": "2026-04-26T23:21:37.246Z"
+  },
+  {
+    "id": "1777245790062",
+    "username": "demo",
+    "hash": "$2b$10$F3Qg46fnOG9dseNC/1nZmeZQOGDYwyofbAebkSJ52bxipCzb0Vjsq",
+    "createdAt": "2026-04-26T23:23:10.062Z"
+  },
+  {
+    "id": "1777246229067",
+    "username": "harry",
+    "hash": "$2b$10$22JCXUqwg4JKYkxUB93gAOP6tyAHLiyuYETa0vwyttbb8gpFBMpca",
+    "createdAt": "2026-04-26T23:30:29.067Z"
+  },
+  {
+    "id": "1777246266898",
+    "username": "testuser",
+    "hash": "$2b$10$s6HhBqSh8IGE1HE3lizpMuVXb7SB6Jae.2oTxJ.37ahJ9GiAelm3C",
+    "createdAt": "2026-04-26T23:31:06.898Z"
+  },
+  {
+    "id": "1777249932756",
+    "username": "harryen",
+    "hash": "$2b$10$W5xMkyLIg97.63rS./rEterGPYbs49ivY.sk/jllmqqhO.ctoMOpu",
+    "createdAt": "2026-04-27T00:32:12.756Z"
+  }
+]

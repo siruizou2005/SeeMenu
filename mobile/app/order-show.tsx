@@ -3,30 +3,25 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ico from '../src/components/Icons';
 import { useApp } from '../src/context/AppContext';
-import { MENU_BY_ID, FINAL_ORDER } from '../src/data';
-
-const STATIC_ITEMS: [string, string, string, string][] = [
-  ['豚骨ラーメン (大盛り)', '猪骨拉面 (大份)', '× 2', '¥2,560'],
-  ['醤油ラーメン',          '酱油拉面',         '× 1', '¥1,080'],
-  ['焼き餃子',              '煎饺 (一份 6 个)',  '× 2', '¥1,160'],
-  ['鶏の唐揚げ',            '日式炸鸡',          '× 1', '¥780'],
-  ['味付け玉子',            '味付溏心蛋',        '× 4', '¥720'],
-];
+import { t } from '../src/i18n';
+import { dishName } from '../src/data';
 
 export default function OrderShowScreen() {
-  const { cartLines } = useApp();
+  const { cartLines, menuData, currencySymbol, cartCnTotal, uiLang } = useApp();
+  const s = t(uiLang);
   const insets = useSafeAreaInsets();
+  const menuById = Object.fromEntries(menuData.map(d => [d.id, d]));
 
-  const items: [string, string, string, string][] = cartLines.length > 0
-    ? cartLines.map(l => {
-        const d = MENU_BY_ID[l.id];
-        if (!d) return null;
-        const price = parseInt(d.price.replace(/[^\d]/g, '')) * l.qty;
-        return [d.jp, d.cn, `× ${l.qty}`, `¥${price.toLocaleString()}`] as [string, string, string, string];
-      }).filter(Boolean) as [string, string, string, string][]
-    : STATIC_ITEMS;
+  const items: [string, string, string, string][] = cartLines
+    .map(l => {
+      const d = menuById[l.id];
+      if (!d) return null;
+      const price = parseFloat(d.price.replace(/[^\d.]/g, '') || '0') * l.qty;
+      return [d.jp, dishName(d, uiLang), `× ${l.qty}`, `${currencySymbol}${price.toLocaleString()}`] as [string, string, string, string];
+    })
+    .filter(Boolean) as [string, string, string, string][];
 
-  const total = items.reduce((s, it) => s + parseInt((it[3] || '¥0').replace(/[^\d]/g, '')), 0);
+  const total = items.reduce((s, it) => s + parseFloat((it[3] || '0').replace(/[^\d.]/g, '') || '0'), 0);
 
   return (
     <View style={styles.root}>
@@ -35,16 +30,16 @@ export default function OrderShowScreen() {
         <Pressable onPress={() => router.back()} style={styles.glassBtn}>
           {Ico.close('#fff', 14)}
         </Pressable>
-        <Text style={styles.chromeHint}>请把屏幕给店员看</Text>
+        <Text style={styles.chromeHint}>{s.showToStaff}</Text>
         <View style={styles.glassBtn}><Text style={styles.rotateText}>↻</Text></View>
       </View>
 
       {/* receipt */}
       <View style={[styles.receipt, { top: insets.top + 56, bottom: insets.bottom + 16 }]}>
         <View style={styles.receiptHeader}>
-          <Text style={styles.headerSub}>ご注文</Text>
-          <Text style={styles.headerTitle}>注 文 票</Text>
-          <Text style={styles.headerMeta}>2026-04-26 · 12:42 · 4 人</Text>
+          <Text style={styles.headerSub}>{s.receiptOrder}</Text>
+          <Text style={styles.headerTitle}>{s.receiptTitle}</Text>
+          <Text style={styles.headerMeta}>2026-04-26 · 12:42 · {s.peopleCount(4)}</Text>
         </View>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 18, paddingBottom: 12 }}>
@@ -65,13 +60,13 @@ export default function OrderShowScreen() {
 
         <View style={styles.receiptFooter}>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>合計 <Text style={styles.totalLabelSub}>(税込)</Text></Text>
-            <Text style={styles.totalNum}>¥{total.toLocaleString()}</Text>
+            <Text style={styles.totalLabel}>{s.totalWithTax}</Text>
+            <Text style={styles.totalNum}>{currencySymbol}{total.toLocaleString()}</Text>
           </View>
         </View>
 
         <View style={styles.notes}>
-          <Text style={styles.notesSub}>備考 · NOTES</Text>
+          <Text style={styles.notesSub}>{s.notesLabel}</Text>
           <Text style={styles.notesText}>海鮮アレルギーがあります。一品はお取り分けでお願いします。</Text>
         </View>
       </View>
